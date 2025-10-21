@@ -9,35 +9,94 @@
 <title>Blocawa (RGB-ИВЕНТ)</title>
 <style>
 :root{
-  --cell-size:36px;--gap:4px;--board-bg:#071021;--cell-bg:#0b1220;--cell-border:rgba(255,255,255,0.03);
+  --cell-size:36px;
+  --gap:4px;
+  --board-bg:#071021;
+  --cell-bg:#0b1220;
+  --cell-border:rgba(255,255,255,0.03);
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 html,body{height:100%;margin:0;font-family:Inter,Roboto,Arial,sans-serif;background:linear-gradient(180deg,#031220,#07182a);color:#e6eef6;-webkit-user-select:none;user-select:none;}
 .wrap{display:flex;flex-direction:column;align-items:center;gap:14px;padding:14px;max-width:720px;margin:0 auto;}
 h1{font-size:16px;font-weight:600;margin:8px 0 0;color:#cfeefe;text-shadow:0 2px 10px rgba(0,0,0,.6);}
 .board-shell{background:rgba(255,255,255,.02);padding:14px;border-radius:14px;box-shadow:0 10px 40px rgba(2,6,23,.75);width:100%;}
-.board{display:grid;grid-template-columns:repeat(10,var(--cell-size));grid-template-rows:repeat(10,var(--cell-size));gap:var(--gap);touch-action:none;justify-content:center;}
-.cell{width:var(--cell-size);height:var(--cell-size);background:var(--cell-bg);border-radius:8px;border:1px solid var(--cell-border);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;transform-origin:center;}
-.cell.occupied{animation:rainbowShift 4s linear infinite,popIn .22s cubic-bezier(.2,.9,.2,1);background:linear-gradient(90deg,rgba(255,0,110,.25),rgba(0,200,255,.25));border:1px solid rgba(255,255,255,.06);box-shadow:inset 0 -6px 18px rgba(0,0,0,.45),0 6px 16px rgba(0,0,0,.5);}
-.cell.occupied::after{content:'';position:absolute;inset:0;z-index:0;background:conic-gradient(from 90deg,#ff0055,#ff9900,#ffee33,#22ddcc,#4488ff,#ff00aa);opacity:.25;transform:scale(1.06);filter:blur(5px) brightness(1.3);animation:rotateHue 6s linear infinite;mix-blend-mode:overlay;}
-.cell .pulse{z-index:1;width:78%;height:78%;border-radius:6px;background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.02));transform:scale(.98);}
-.cell.highlight-okay{outline:3px solid rgba(16,185,129,.25);box-shadow:0 0 18px rgba(16,185,129,.1) inset;border-radius:8px;}
-.cell.highlight-bad{outline:3px solid rgba(239,68,68,.25);box-shadow:0 0 18px rgba(239,68,68,.1) inset;border-radius:8px;}
+.board{
+  display:grid;
+  grid-template-columns:repeat(10,var(--cell-size));
+  grid-template-rows:repeat(10,var(--cell-size));
+  gap:var(--gap);
+  touch-action:none;
+  justify-content:center;
+}
+.cell{
+  width:var(--cell-size);
+  height:var(--cell-size);
+  background:var(--cell-bg);
+  border-radius:8px;
+  border:1px solid var(--cell-border);
+  display:flex;align-items:center;justify-content:center;
+  position:relative;overflow:hidden;transform-origin:center;
+}
+
+/* rainbow background for occupied cells (ярче на ~30%) */
+.cell.occupied{
+  animation:rainbowShift 4s linear infinite,popIn .22s cubic-bezier(.2,.9,.2,1);
+  background:linear-gradient(90deg,rgba(255,0,110,.28),rgba(0,200,255,.28));
+  border:1px solid rgba(255,255,255,.08);
+  box-shadow:inset 0 -6px 18px rgba(0,0,0,.45),0 6px 16px rgba(0,0,0,.5);
+}
+.cell.occupied::after{
+  content:'';
+  position:absolute;inset:0;z-index:0;
+  /* более яркая конусная радужная заливка */
+  background:conic-gradient(from 90deg,#ff0055,#ff9900,#ffee33,#1fd9cc,#4b88ff,#ff00aa);
+  opacity:.28;
+  transform:scale(1.06);
+  filter:blur(6px) brightness(1.25);
+  animation:rotateHue 6s linear infinite;
+  mix-blend-mode:overlay;
+}
+.cell .pulse{
+  z-index:1;
+  width:78%;height:78%;border-radius:6px;
+  background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02));
+  transform:scale(.98);
+}
+
+.cell.highlight-okay{outline:3px solid rgba(16,185,129,.25);box-shadow:0 0 22px rgba(16,185,129,.12) inset;border-radius:8px;}
+.cell.highlight-bad{outline:3px solid rgba(239,68,68,.28);box-shadow:0 0 22px rgba(239,68,68,.12) inset;border-radius:8px;}
+
 .palette{display:flex;gap:12px;margin-top:12px;justify-content:center;flex-wrap:wrap;}
-.piece{background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(0,0,0,.03));padding:8px;border-radius:12px;min-width:124px;display:flex;gap:10px;align-items:center;justify-content:center;touch-action:none;border:1px solid rgba(255,255,255,.03);transition:transform .16s ease,box-shadow .16s ease;}
+.piece{
+  background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(0,0,0,.03));
+  padding:8px;border-radius:12px;
+  min-width:124px;display:flex;gap:10px;align-items:center;justify-content:center;
+  touch-action:none;border:1px solid rgba(255,255,255,.03);
+  transition:transform .16s ease,box-shadow .16s ease;
+}
 .piece.picked{transform:translateY(-6px) scale(1.03);box-shadow:0 14px 40px rgba(2,6,23,.7);}
 .mini-grid{display:grid;gap:4px;}
 .mini-cell{width:14px;height:14px;border-radius:3px;background:rgba(255,255,255,.05);box-shadow:inset 0 -2px 6px rgba(0,0,0,.45);}
 .mini-cell.filled{background:linear-gradient(180deg,#ff7aa2,#8affd1);box-shadow:0 4px 10px rgba(2,6,8,.6);}
+
 .ghost{position:fixed;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);opacity:.95;filter:drop-shadow(0 12px 30px rgba(2,6,23,.6));border-radius:10px;transition:transform .08s linear;}
 .controls{display:flex;gap:8px;margin-top:8px;align-items:center;justify-content:center;flex-wrap:wrap;}
 button{padding:8px 10px;border-radius:8px;border:0;background:#0b1220;color:#dff7f0;font-weight:700;cursor:pointer;box-shadow:0 6px 18px rgba(2,6,23,.6);}
 .score{margin-left:8px;color:#9ee7d6;font-weight:800;font-size:15px;}
+
 .cell.clearing{animation:clearFade .42s cubic-bezier(.2,.9,.2,1) forwards;}
-.easter{position:fixed;left:50%;bottom:-160px;transform:translateX(-50%);background:linear-gradient(180deg,#0a1318,#07101a);padding:18px 26px;border-radius:18px;z-index:2000;border:1px solid rgba(255,255,255,.06);box-shadow:0 20px 60px rgba(2,6,23,.75);display:flex;gap:10px;align-items:center;color:#fff;font-weight:800;letter-spacing:.6px;opacity:0;}
+
+.easter{
+  position:fixed;left:50%;bottom:-160px;transform:translateX(-50%);
+  background:linear-gradient(180deg,#0a1318,#07101a);
+  padding:18px 26px;border-radius:18px;z-index:2000;border:1px solid rgba(255,255,255,.06);
+  box-shadow:0 20px 60px rgba(2,6,23,.75);
+  display:flex;gap:10px;align-items:center;color:#fff;font-weight:800;letter-spacing:.6px;opacity:0;
+}
 .easter.show{animation:slideUp 1s cubic-bezier(.2,.9,.2,1) forwards;}
-.easter .label{font-size:20px;color:#ffd36b;text-shadow:0 4px 30px rgba(255,211,107,.1);}
+.easter .label{font-size:20px;color:#ffd36b;text-shadow:0 4px 30px rgba(255,211,107,.12);}
 .easter .sub{font-size:14px;color:#bfe9d7;}
+
 @keyframes rainbowShift{0%{filter:hue-rotate(0deg);}100%{filter:hue-rotate(360deg);}}
 @keyframes rotateHue{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
 @keyframes popIn{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.05);}100%{transform:scale(1);opacity:1}}
@@ -47,45 +106,422 @@ button{padding:8px 10px;border-radius:8px;border:0;background:#0b1220;color:#dff
 </style>
 </head>
 <body>
-<noscript><div style="text-align:center;padding:2em;font-size:18px;color:#fff;">⚠️ Для запуска игры включите JavaScript.</div></noscript>
+<noscript>
+  <div style="text-align:center;padding:2em;font-size:18px;color:#fff;">
+    ⚠️ Для запуска игры включите JavaScript.
+  </div>
+</noscript>
 
 <div class="wrap">
   <h1>Blocawa — RGB-ИВЕНТ</h1>
   <div class="board-shell" id="boardShell">
-    <div id="board" class="board"></div>
-    <div class="palette" id="palette"></div>
+    <div id="board" class="board" aria-label="Игровое поле"></div>
+    <div class="palette" id="palette" aria-hidden="false"></div>
     <div class="controls">
       <button id="newPiecesBtn">рестарт блоков</button>
       <div class="score">Очки: <span id="score">0</span></div>
     </div>
   </div>
 </div>
+
+<!-- Easter egg element -->
 <div id="easter" class="easter" aria-hidden="true">
   <div class="label">удобная поза</div>
   <div class="sub">— ира пасхалко —</div>
 </div>
 
 <script>
-/* тот же JS, логика полностью совпадает с твоим вариантом ghvcfd.html */
-const COLS=10,ROWS=10;const b=document.getElementById("board"),p=document.getElementById("palette"),s=document.getElementById("score"),btn=document.getElementById("newPiecesBtn"),egg=document.getElementById("easter");let board=Array.from({length:ROWS},()=>Array(COLS).fill(0)),score=0;
-const SHAPES=[[[0,0]],[[0,0],[1,0]],[[0,0],[1,0],[2,0]],[[0,0],[0,1],[1,0]],[[0,0],[1,0],[0,1],[1,1]],[[0,0],[1,0],[2,0],[3,0]],[[0,0],[1,0],[2,0],[1,1]],[[1,0],[0,1],[1,1],[2,1],[1,2]],[[0,0],[1,0],[2,0],[2,1]],[[0,0],[0,1],[0,2],[1,2]],[[0,1],[1,1],[2,1],[1,0]],[[0,0],[1,0],[1,1]],[[0,0],[1,0],[2,0],[0,1]]];
-function renderBoard(){b.innerHTML='';for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){const cell=document.createElement('div');cell.className='cell';cell.dataset.r=r;cell.dataset.c=c;if(board[r][c]){cell.classList.add('occupied');cell.appendChild(Object.assign(document.createElement('div'),{className:'pulse'}));}b.appendChild(cell);}}
+/* Полный JS: логика игрового поля, палитры, drag/tap, очистки и пасхалки. */
+/* Константы */
+const COLS = 10, ROWS = 10;
+const boardEl = document.getElementById('board');
+const paletteEl = document.getElementById('palette');
+const scoreEl = document.getElementById('score');
+const newPiecesBtn = document.getElementById('newPiecesBtn');
+const easterEl = document.getElementById('easter');
+
+let board = Array.from({length: ROWS}, ()=>Array(COLS).fill(0));
+let score = 0;
+
+/* Набор фигур — скорректирован и готов к использованию */
+const SHAPES = [
+  [[0,0]], // single
+  [[0,0],[1,0]], // 2-line
+  [[0,0],[1,0],[2,0]], // 3-line
+  [[0,0],[0,1],[1,0]], // small L (2x2 L)
+  [[0,0],[1,0],[0,1],[1,1]], // 2x2 square
+  [[0,0],[1,0],[2,0],[3,0]], // 4-line
+  [[0,0],[1,0],[2,0],[1,1]], // T (upright)
+  [[1,0],[0,1],[1,1],[2,1],[1,2]], // plus (5)
+  [[0,0],[1,0],[2,0],[2,1]], // L-like longer
+  [[0,0],[0,1],[0,2],[1,2]], // mirrored L
+  [[0,1],[1,1],[2,1],[1,0]], // T variant (centered)
+  [[0,0],[1,0],[1,1]], // small corner
+  [[0,0],[1,0],[2,0],[0,1]] // Г-образный
+];
+
+/* --- Отрисовка доски --- */
+function renderBoard(){
+  boardEl.innerHTML = '';
+  for(let r=0;r<ROWS;r++){
+    for(let c=0;c<COLS;c++){
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.dataset.r = r;
+      cell.dataset.c = c;
+      if(board[r][c]){
+        cell.classList.add('occupied');
+        const inner = document.createElement('div');
+        inner.className = 'pulse';
+        cell.appendChild(inner);
+      }
+      boardEl.appendChild(cell);
+    }
+  }
+}
 renderBoard();
-function randomPiece(){const shape=SHAPES[Math.floor(Math.random()*SHAPES.length)];const minx=Math.min(...shape.map(p=>p[0])),miny=Math.min(...shape.map(p=>p[1]));const coords=shape.map(p=>[p[0]-minx,p[1]-miny]);return{coords,id:Math.random().toString(36).slice(2,8)};}
-let palette=[];function refillPalette(){palette=[randomPiece(),randomPiece(),randomPiece()];renderPalette();}
-function renderPalette(){p.innerHTML='';for(const q of palette){const pe=document.createElement('div');pe.className='piece';const mx=Math.max(...q.coords.map(c=>c[0])),my=Math.max(...q.coords.map(c=>c[1]));const m=document.createElement('div');m.className='mini-grid';m.style.gridTemplateColumns=`repeat(${mx+1},14px)`;for(let y=0;y<=my;y++)for(let x=0;x<=mx;x++){const mc=document.createElement('div');const f=q.coords.some(pt=>pt[0]===x&&pt[1]===y);mc.className='mini-cell'+(f?' filled':'');if(f)mc.style.background='linear-gradient(180deg,#ff9acc,#9fffe5)';m.appendChild(mc);}pe.appendChild(m);p.appendChild(pe);attachPiecePointerHandlers(pe,q);} }
+
+/* --- Генерация случайной фигуры --- */
+function randomPiece(){
+  const shape = SHAPES[Math.floor(Math.random()*SHAPES.length)];
+  // Normalize so min x,y = 0
+  let minx = Math.min(...shape.map(p=>p[0])), miny = Math.min(...shape.map(p=>p[1]));
+  const coords = shape.map(p=>[p[0]-minx, p[1]-miny]);
+  return {coords, id: Math.random().toString(36).slice(2,8)};
+}
+
+/* --- Палитра --- */
+let palette = [];
+function refillPalette(){
+  palette = [randomPiece(), randomPiece(), randomPiece()];
+  renderPalette();
+}
 refillPalette();
-let current=null,ghost=null;
-function makeGhost(piece){const g=document.createElement('div');g.className='ghost';const mx=Math.max(...piece.coords.map(p=>p[0])),my=Math.max(...piece.coords.map(p=>p[1]));g.style.display='grid';g.style.gridTemplateColumns=`repeat(${mx+1},${Math.round(parseInt(getComputedStyle(document.documentElement).getPropertyValue('--cell-size'))*.9)}px)`;for(let y=0;y<=my;y++)for(let x=0;x<=mx;x++){const box=document.createElement('div');box.style.borderRadius='6px';box.style.boxShadow='inset 0 -3px 8px rgba(0,0,0,.6)';if(piece.coords.some(pt=>pt[0]===x&&pt[1]===y))box.style.background='linear-gradient(180deg,#ff9ad1,#7df0c2)';g.appendChild(box);}document.body.appendChild(g);return g;}
-function attachPiecePointerHandlers(el,piece){el.addEventListener('pointerdown',e=>{e.preventDefault();el.setPointerCapture(e.pointerId);current={piece,pointerId:e.pointerId,origin:el,startX:e.clientX,startY:e.clientY,moved:false};el.classList.add('picked');ghost=makeGhost(piece);moveGhost(e.clientX,e.clientY);window.addEventListener('pointermove',move);window.addEventListener('pointerup',up);});}
-function move(e){if(!current||e.pointerId!==current.pointerId)return;const dx=e.clientX-current.startX,dy=e.clientY-current.startY;if(!current.moved&&(Math.abs(dx)>6||Math.abs(dy)>6))current.moved=true;moveGhost(e.clientX,e.clientY);const r=b.getBoundingClientRect();const cw=r.width/COLS,ch=r.height/ROWS;const bc=Math.floor((e.clientX-r.left)/cw),br=Math.floor((e.clientY-r.top)/ch);clearHighlights();if(bc>=0&&bc<COLS&&br>=0&&br<ROWS){const ok=checkPlace(current.piece.coords,br,bc);highlight(current.piece.coords,br,bc,ok);} }
-function up(e){if(!current||e.pointerId!==current.pointerId)return;const r=b.getBoundingClientRect(),cw=r.width/COLS,ch=r.height/ROWS;const bc=Math.floor((e.clientX-r.left)/cw),br=Math.floor((e.clientY-r.top)/ch);if(current.moved&&bc>=0&&bc<COLS&&br>=0&&br<ROWS)place(current.piece,br,bc);else tapMode(current.piece,current.origin);clean();}
-function clean(){if(current&&current.origin)current.origin.classList.remove('picked');if(ghost){ghost.remove();ghost=null;}current=null;window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);clearHighlights();}
-function moveGhost(x,y){if(ghost){ghost.style.left=x+'px';ghost.style.top=y+'px';}}
-function checkPlace(cds,r,c){for(const [x,y]of cds){const rr=r+y,cc=c+x;if(rr<0||rr>=ROWS||cc<0||cc>=COLS)return false;if(board[rr][cc])return false;}return true;}
-function highlight(cds,r,c,ok){cds.forEach(([x,y])=>{const rr=r+y,cc=c+x;if(rr<0||rr>=ROWS||cc<0||cc>=COLS)return;const idx=rr*COLS+cc,cell=b.children[idx];if(cell)cell.classList.add(ok?'highlight-okay':'highlight-bad');});}
-function clearHighlights(){b.querySelectorAll('.highlight-okay,.highlight-bad').forEach(el=>el.classList.remove('highlight-okay','highlight-bad'));}
-function place(piece,r,c){if(!checkPlace(piece.coords,r,c)){if(navigator.vibrate)navigator.vibrate(30);b.style.transform='translateY(-6px)';setTimeout(()=>b.style.transform='',80);return;}
-piece.coords.forEach(([x,y])=>board[r+y][c+x]=1);renderBoard();palette=palette.filter(p=>p.id!==piece.id);if(palette.length===0)refillPalette();renderPalette();score+=piece.coords.length*10;s.textContent=score;if(score===69000)eggShow();const cleared=clearLines();if(cleared){score+=cleared*50;s.textContent=score;if(score===69000)eggShow();}}
-let tap=null;function tapMode(piece,el){tap={piece,el};el.classList.add('picked');const h=e=>{if(!e.target.classList.contains('cell'))return;const r=+e.target.dataset.r,c=+e.target.dataset.c;place(piece,r,c);el.classList.remove('picked');tap=null;b.removeEventListener('pointerdown',h);};b.addEventListener('pointerdown',h);}
-function clearLines(){const rows=[],cols=[];for(let r=0;r<ROWS;r++)if(board[r].every(v=>v===1))rows.push(r);for(let c=0;c<COLS;c++){let ok=true;for(let r=0;r<ROWS;r++)if(board[r][c]===0){ok=false;break;}if(ok)cols.push(c);}if(!rows.length&&!cols.length)return 0;const to=[];rows.forEach(r=>{for(let c=0;c<COLS;c++)to.push([r,c]);});cols.for
+
+function renderPalette(){
+  paletteEl.innerHTML = '';
+  for(let i=0;i<palette.length;i++){
+    const p = palette[i];
+    const pieceEl = document.createElement('div');
+    pieceEl.className = 'piece';
+    pieceEl.dataset.pieceId = p.id;
+    pieceEl.setAttribute('role','button');
+
+    // compute bounds
+    const maxX = Math.max(...p.coords.map(cc=>cc[0]));
+    const maxY = Math.max(...p.coords.map(cc=>cc[1]));
+    const cols = maxX+1, rows = maxY+1;
+    const mini = document.createElement('div');
+    mini.className = 'mini-grid';
+    mini.style.gridTemplateColumns = `repeat(${cols}, 14px)`;
+    mini.style.gridAutoRows = `14px`;
+    mini.style.padding = '6px';
+    mini.style.borderRadius = '8px';
+    mini.style.background = 'linear-gradient(180deg, rgba(255,255,255,0.01), rgba(0,0,0,0.01))';
+
+    for(let y=0;y<rows;y++){
+      for(let x=0;x<cols;x++){
+        const mc = document.createElement('div');
+        const filled = p.coords.some(pt=>pt[0]===x && pt[1]===y);
+        mc.className = 'mini-cell' + (filled? ' filled':'');
+        if(filled) mc.style.background = 'linear-gradient(180deg,#ff7aa2,#8affd1)';
+        mini.appendChild(mc);
+      }
+    }
+    pieceEl.appendChild(mini);
+    paletteEl.appendChild(pieceEl);
+    attachPiecePointerHandlers(pieceEl, p);
+  }
+}
+
+/* --- Drag / Tap state --- */
+let currentPick = null;
+let ghost = null;
+
+function createGhostForPiece(piece){
+  const g = document.createElement('div');
+  g.className = 'ghost';
+  // build grid reflective of bounding box
+  const maxX = Math.max(...piece.coords.map(p=>p[0]));
+  const maxY = Math.max(...piece.coords.map(p=>p[1]));
+  const cols = maxX+1, rows = maxY+1;
+  g.style.display = 'grid';
+  const cellBase = Math.max(20, Math.round(parseInt(getComputedStyle(document.documentElement).getPropertyValue('--cell-size'))*0.9));
+  g.style.gridTemplateColumns = `repeat(${cols}, ${cellBase}px)`;
+  g.style.gridAutoRows = `${cellBase}px`;
+  g.style.gap = Math.max(3, Math.round(parseInt(getComputedStyle(document.documentElement).getPropertyValue('--gap'))*0.6)) + 'px';
+  g.style.padding = '6px';
+  g.style.borderRadius = '10px';
+  g.style.background = 'rgba(0,0,0,0.22)';
+  g.style.border = '1px solid rgba(255,255,255,0.04)';
+
+  for(let y=0;y<rows;y++){
+    for(let x=0;x<cols;x++){
+      const box = document.createElement('div');
+      box.style.borderRadius = '6px';
+      box.style.boxShadow = 'inset 0 -3px 8px rgba(0,0,0,0.6)';
+      if(piece.coords.some(pt=>pt[0]===x && pt[1]===y)){
+        box.style.background = 'linear-gradient(180deg,#ff9ad1,#7df0c2)';
+        box.style.opacity = '0.98';
+      } else {
+        box.style.background = 'transparent';
+      }
+      g.appendChild(box);
+    }
+  }
+
+  document.body.appendChild(g);
+  return g;
+}
+
+function attachPiecePointerHandlers(el, piece){
+  el.addEventListener('pointerdown', (e)=>{
+    e.preventDefault();
+    el.setPointerCapture(e.pointerId);
+    currentPick = {
+      piece,
+      pointerId: e.pointerId,
+      originEl: el,
+      startX: e.clientX,
+      startY: e.clientY,
+      moved: false
+    };
+    el.classList.add('picked');
+    ghost = createGhostForPiece(piece);
+    moveGhost(e.clientX, e.clientY);
+    window.addEventListener('pointermove', onGlobalPointerMove);
+    window.addEventListener('pointerup', onGlobalPointerUp);
+  });
+}
+
+function onGlobalPointerMove(e){
+  if(!currentPick || e.pointerId !== currentPick.pointerId) return;
+  const dx = e.clientX - currentPick.startX, dy = e.clientY - currentPick.startY;
+  if(!currentPick.moved && (Math.abs(dx)>6 || Math.abs(dy)>6)){
+    currentPick.moved = true;
+  }
+  moveGhost(e.clientX, e.clientY);
+
+  // highlight cell under pointer
+  const boardRect = boardEl.getBoundingClientRect();
+  const cellW = boardRect.width / COLS;
+  const cellH = boardRect.height / ROWS;
+  const relX = e.clientX - boardRect.left;
+  const relY = e.clientY - boardRect.top;
+  const baseCol = Math.floor(relX / cellW);
+  const baseRow = Math.floor(relY / cellH);
+  clearHighlights();
+  if(baseCol>=0 && baseCol<COLS && baseRow>=0 && baseRow<ROWS){
+    const ok = checkPlacement(currentPick.piece.coords, baseRow, baseCol);
+    highlightPlacement(currentPick.piece.coords, baseRow, baseCol, ok);
+  }
+}
+
+function onGlobalPointerUp(e){
+  if(!currentPick || e.pointerId !== currentPick.pointerId) return;
+  const boardRect = boardEl.getBoundingClientRect();
+  const cellW = boardRect.width / COLS;
+  const cellH = boardRect.height / ROWS;
+  const relX = e.clientX - boardRect.left;
+  const relY = e.clientY - boardRect.top;
+  const baseCol = Math.floor(relX / cellW);
+  const baseRow = Math.floor(relY / cellH);
+
+  if(currentPick.moved){
+    if(baseCol>=0 && baseCol<COLS && baseRow>=0 && baseRow<ROWS){
+      attemptPlace(currentPick.piece, baseRow, baseCol);
+    }
+  } else {
+    enterTapToPlaceMode(currentPick.piece, currentPick.originEl);
+  }
+  cleanupCurrentPick();
+}
+
+function cleanupCurrentPick(){
+  if(currentPick && currentPick.originEl) currentPick.originEl.classList.remove('picked');
+  if(ghost){ ghost.remove(); ghost = null; }
+  currentPick = null;
+  window.removeEventListener('pointermove', onGlobalPointerMove);
+  window.removeEventListener('pointerup', onGlobalPointerUp);
+  clearHighlights();
+}
+
+function moveGhost(clientX, clientY){
+  if(!ghost) return;
+  ghost.style.left = clientX + 'px';
+  ghost.style.top = clientY + 'px';
+}
+
+/* --- Проверки и подсветка --- */
+function checkPlacement(coords, row, col){
+  for(const [x,y] of coords){
+    const r = row + y; const c = col + x;
+    if(r<0 || r>=ROWS || c<0 || c>=COLS) return false;
+    if(board[r][c]) return false;
+  }
+  return true;
+}
+
+function highlightPlacement(coords, row, col, ok){
+  coords.forEach(([x,y])=>{
+    const r = row + y, c = col + x;
+    if(r<0 || r>=ROWS || c<0 || c>=COLS) return;
+    const idx = r*COLS + c;
+    const cell = boardEl.children[idx];
+    if(!cell) return;
+    cell.classList.add(ok ? 'highlight-okay' : 'highlight-bad');
+  });
+}
+
+function clearHighlights(){
+  boardEl.querySelectorAll('.cell.highlight-okay, .cell.highlight-bad').forEach(el=>{
+    el.classList.remove('highlight-okay','highlight-bad');
+  });
+}
+
+/* --- Размещение фигуры --- */
+function attemptPlace(piece, row, col){
+  if(!checkPlacement(piece.coords, row, col)){
+    if(navigator.vibrate) navigator.vibrate(32);
+    flashBadPlacement();
+    return false;
+  }
+  piece.coords.forEach(([x,y])=>{
+    const r = row + y, c = col + x;
+    board[r][c] = 1;
+  });
+  renderBoard();
+  palette = palette.filter(p=>p.id !== piece.id);
+  if(palette.length===0) refillPalette();
+  renderPalette();
+  // score: базовые очки + бонусы за размещение
+  score += piece.coords.length * 10;
+  scoreEl.textContent = score;
+
+  // Пасхалка: ровно 69000
+  if(score === 69000) showEasterEgg();
+
+  // проверка и очистка линий
+  const cleared = clearFullLines();
+  if(cleared > 0){
+    // бонус за множественные линии
+    score += cleared * 50;
+    scoreEl.textContent = score;
+    if(score === 69000) showEasterEgg();
+  }
+
+  return true;
+}
+
+function flashBadPlacement(){
+  // небольшой визуальный флеш всех клеток
+  boardEl.style.transition = 'transform 80ms ease';
+  boardEl.style.transform = 'translateY(-6px)';
+  setTimeout(()=>{ boardEl.style.transform = ''; }, 90);
+}
+
+/* --- Tap-to-place mode --- */
+let tapMode = null;
+function enterTapToPlaceMode(piece, originEl){
+  tapMode = {piece, originEl};
+  originEl.classList.add('picked');
+  const handler = function(e){
+    e.preventDefault();
+    const target = e.target;
+    if(!target.classList.contains('cell')) return;
+    const r = Number(target.dataset.r), c = Number(target.dataset.c);
+    attemptPlace(piece, r, c);
+    originEl.classList.remove('picked');
+    tapMode = null;
+    boardEl.removeEventListener('pointerdown', handler);
+  };
+  boardEl.addEventListener('pointerdown', handler);
+}
+
+/* --- Очистка полных строк/столбцов --- */
+function clearFullLines(){
+  const fullRows = [];
+  for(let r=0;r<ROWS;r++) if(board[r].every(v=>v===1)) fullRows.push(r);
+  const fullCols = [];
+  for(let c=0;c<COLS;c++){
+    let ok = true;
+    for(let r=0;r<ROWS;r++) if(board[r][c]===0){ ok=false; break; }
+    if(ok) fullCols.push(c);
+  }
+  if(fullRows.length===0 && fullCols.length===0) return 0;
+
+  // Для анимации пометим клетки как clearing, затем удалим
+  const toClearCells = [];
+  fullRows.forEach(r=>{
+    for(let c=0;c<COLS;c++){
+      toClearCells.push([r,c]);
+    }
+  });
+  fullCols.forEach(c=>{
+    for(let r=0;r<ROWS;r++){
+      // avoid double push
+      if(!toClearCells.some(pair=>pair[0]===r && pair[1]===c)) toClearCells.push([r,c]);
+    }
+  });
+
+  // пометим DOM-элементы
+  toClearCells.forEach(([r,c])=>{
+    const idx = r*COLS + c;
+    const el = boardEl.children[idx];
+    if(el) el.classList.add('clearing');
+  });
+
+  // подождём анимацию, затем очистим data model и перерендерим
+  setTimeout(()=>{
+    // очистка данных
+    fullRows.forEach(r=>{ for(let c=0;c<COLS;c++) board[r][c]=0; });
+    fullCols.forEach(c=>{ for(let r=0;r<ROWS;r++) board[r][c]=0; });
+    renderBoard();
+  }, 420);
+
+  // очки
+  const clearedCount = fullRows.length + fullCols.length;
+  score += clearedCount * 100; // дополнительная награда
+  scoreEl.textContent = score;
+  return clearedCount;
+}
+
+/* --- Новые фигуры --- */
+newPiecesBtn.addEventListener('click', ()=>{ refillPalette(); });
+
+/* --- Отключение скролла при таче внутри поля --- */
+document.addEventListener('touchmove', function(e){
+  if(e.target.closest('.board-shell')) e.preventDefault();
+}, {passive:false});
+
+/* --- Поддержка клика для tap mode (десктоп) --- */
+boardEl.addEventListener('click', (e)=>{
+  if(tapMode && e.target.classList.contains('cell')){
+    const r = Number(e.target.dataset.r), c = Number(e.target.dataset.c);
+    attemptPlace(tapMode.piece, r, c);
+    if(tapMode.originEl) tapMode.originEl.classList.remove('picked');
+    tapMode = null;
+  }
+});
+
+/* --- Пасхалка: "удобная поза" --- */
+let easterShown = false;
+function showEasterEgg(){
+  if(easterShown) return;
+  easterShown = true;
+  easterEl.classList.add('show');
+  easterEl.setAttribute('aria-hidden','false');
+  // скрыть через 5.5 сек
+  setTimeout(()=>{
+    easterEl.classList.remove('show');
+    easterEl.setAttribute('aria-hidden','true');
+  }, 5500);
+}
+
+/* --- Инициализация --- */
+renderBoard();
+renderPalette();
+
+</script>
+</body>
+</html>
