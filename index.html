@@ -521,6 +521,67 @@ function showEasterEgg(){
 renderBoard();
 renderPalette();
 
+  /* ================= Сохранение игры в cookie ================= */
+
+function setCookie(name, value, days=365) {
+  const date = new Date();
+  date.setTime(date.getTime() + (days*24*60*60*1000));
+  const expires = "expires=" + date.toUTCString();
+  document.cookie = name + "=" + value + ";" + expires + ";path=/";
+}
+
+function getCookie(name) {
+  const n = name + "=";
+  const decodedCookie = decodeURIComponent(document.cookie);
+  const ca = decodedCookie.split(';');
+  for(let i=0;i<ca.length;i++) {
+    let c = ca[i];
+    while(c.charAt(0)==' ') c = c.substring(1);
+    if(c.indexOf(n)==0) return c.substring(n.length, c.length);
+  }
+  return "";
+}
+
+function saveGame() {
+  const data = {
+    board,
+    score,
+    paletteCoords: palette.map(p=>p.coords),
+    paletteIds: palette.map(p=>p.id)
+  };
+  const encoded = btoa(JSON.stringify(data));
+  setCookie("blocawa_save", encoded, 365);
+}
+
+function loadGame() {
+  const raw = getCookie("blocawa_save");
+  if(!raw) return false;
+  try {
+    const data = JSON.parse(atob(raw));
+    board = data.board || board;
+    score = data.score || 0;
+    palette = (data.paletteCoords||[]).map((coords,i)=>({
+      coords, id: data.paletteIds[i] || Math.random().toString(36).slice(2,8)
+    }));
+    renderBoard();
+    renderPalette();
+    scoreEl.textContent = score;
+    return true;
+  } catch(e){
+    console.warn("Ошибка загрузки сохранения:", e);
+    return false;
+  }
+}
+
+/* Автоматическое сохранение */
+setInterval(saveGame, 3000);
+
+/* При загрузке страницы */
+if(!loadGame()){
+  renderBoard();
+  renderPalette();
+}
+
 </script>
 </body>
 </html>
