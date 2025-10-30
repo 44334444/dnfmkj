@@ -1,231 +1,907 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Block Puzzle Online</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+<meta name="description" content="Blocawa RGB-ИВЕНТ — сенсорная игра в стиле Block Blast с радужной анимацией и пасхалкой." />
+<meta name="theme-color" content="#071021" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23071021'/><text x='50' y='70' font-size='80' text-anchor='middle' fill='%23fff'>🧩</text></svg>">
+<title>Blocawa (RGB-ИВЕНТ)</title>
 <style>
-  body {
-    margin: 0;
-    background: #0f172a;
-    color: #fff;
-    font-family: Arial, sans-serif;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    user-select: none;
-  }
-  h1 {
-    margin-top: 10px;
-    color: #8ae7d1;
-  }
-  canvas {
-    background: #1e293b;
-    margin-top: 10px;
-    border: 2px solid #334155;
-    border-radius: 8px;
-  }
-  .controls {
-    margin-top: 10px;
-    display: flex;
-    justify-content: center;
-    gap: 8px;
-  }
-  button {
-    background: #334155;
-    color: #fff;
-    border: none;
-    padding: 8px 14px;
-    border-radius: 6px;
-    cursor: pointer;
-  }
-  button:hover {
-    background: #475569;
-  }
-  .leaders {
-    margin-top: 12px;
-    text-align: center;
-  }
-  .leaders h2 {
-    font-size: 14px;
-    color: #8ae7d1;
-  }
-  .leaders ol {
-    list-style: none;
-    padding: 0;
-  }
-  .leaders ol li {
-    margin: 4px 0;
-    background: rgba(255,255,255,.05);
-    padding: 6px 10px;
-    border-radius: 6px;
-  }
+:root{
+  --cell-size:36px;
+  --gap:4px;
+  --board-bg:#071021;
+  --cell-bg:#0b1220;
+  --cell-border:rgba(255,255,255,0.03);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;margin:0;font-family:Inter,Roboto,Arial,sans-serif;background:linear-gradient(180deg,#031220,#07182a);color:#e6eef6;-webkit-user-select:none;user-select:none;}
+.wrap{display:flex;flex-direction:column;align-items:center;gap:14px;padding:14px;max-width:720px;margin:0 auto;}
+h1{font-size:16px;font-weight:600;margin:8px 0 0;color:#cfeefe;text-shadow:0 2px 10px rgba(0,0,0,.6);}
+.board-shell{background:rgba(255,255,255,.02);padding:14px;border-radius:14px;box-shadow:0 10px 40px rgba(2,6,23,.75);width:100%;}
+.board{
+  display:grid;
+  grid-template-columns:repeat(10,var(--cell-size));
+  grid-template-rows:repeat(10,var(--cell-size));
+  gap:var(--gap);
+  touch-action:none;
+  justify-content:center;
+}
+.cell{
+  width:var(--cell-size);
+  height:var(--cell-size);
+  background:var(--cell-bg);
+  border-radius:8px;
+  border:1px solid var(--cell-border);
+  display:flex;align-items:center;justify-content:center;
+  position:relative;overflow:hidden;transform-origin:center;
+  transition:transform .12s ease,box-shadow .12s ease,opacity .12s ease;
+}
+
+/* rainbow background for occupied cells (ярче на ~30%) */
+.cell.occupied{
+  animation:rainbowShift 4s linear infinite,popIn .22s cubic-bezier(.2,.9,.2,1);
+  background:linear-gradient(90deg,rgba(255,0,110,.28),rgba(0,200,255,.28));
+  border:1px solid rgba(255,255,255,.08);
+  box-shadow:inset 0 -6px 18px rgba(0,0,0,.45),0 6px 16px rgba(0,0,0,.5);
+}
+.cell.occupied::after{
+  content:'';
+  position:absolute;inset:0;z-index:0;
+  background:conic-gradient(from 90deg,#ff0055,#ff9900,#ffee33,#1fd9cc,#4b88ff,#ff00aa);
+  opacity:.28;
+  transform:scale(1.06);
+  filter:blur(6px) brightness(1.25);
+  animation:rotateHue 6s linear infinite;
+  mix-blend-mode:overlay;
+}
+.cell .pulse{
+  z-index:1;
+  width:78%;height:78%;border-radius:6px;
+  background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02));
+  transform:scale(.98);
+}
+
+.cell.highlight-okay{outline:3px solid rgba(16,185,129,.25);box-shadow:0 0 22px rgba(16,185,129,.12) inset;border-radius:8px;}
+.cell.highlight-bad{outline:3px solid rgba(239,68,68,.28);box-shadow:0 0 22px rgba(239,68,68,.12) inset;border-radius:8px;}
+
+.palette{display:flex;gap:12px;margin-top:12px;justify-content:center;flex-wrap:wrap;}
+.piece{
+  background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(0,0,0,.03));
+  padding:8px;border-radius:12px;
+  min-width:124px;display:flex;gap:10px;align-items:center;justify-content:center;
+  touch-action:none;border:1px solid rgba(255,255,255,.03);
+  transition:transform .16s ease,box-shadow .16s ease;
+}
+.piece.picked{transform:translateY(-6px) scale(1.03);box-shadow:0 14px 40px rgba(2,6,23,.7);}
+.mini-grid{display:grid;gap:4px;}
+.mini-cell{width:14px;height:14px;border-radius:3px;background:rgba(255,255,255,.05);box-shadow:inset 0 -2px 6px rgba(0,0,0,.45);}
+.mini-cell.filled{background:linear-gradient(180deg,#ff7aa2,#8affd1);box-shadow:0 4px 10px rgba(2,6,8,.6);}
+
+.ghost{position:fixed;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);opacity:.95;filter:drop-shadow(0 12px 30px rgba(2,6,23,.6));border-radius:10px;transition:transform .08s linear;}
+.controls{display:flex;gap:8px;margin-top:8px;align-items:center;justify-content:center;flex-wrap:wrap;}
+button{padding:8px 10px;border-radius:8px;border:0;background:#0b1220;color:#dff7f0;font-weight:700;cursor:pointer;box-shadow:0 6px 18px rgba(2,6,23,.6);}
+.score{margin-left:8px;color:#9ee7d6;font-weight:800;font-size:15px;}
+
+.cell.clearing{animation:clearFade .42s cubic-bezier(.2,.9,.2,1) forwards;}
+.cell.placed{animation:placePop .28s cubic-bezier(.2,.9,.2,1);box-shadow:0 10px 30px rgba(0,0,0,.6) inset,0 14px 40px rgba(0,0,0,.5);}
+
+@keyframes rainbowShift{0%{filter:hue-rotate(0deg);}100%{filter:hue-rotate(360deg);}}
+@keyframes rotateHue{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
+@keyframes popIn{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.05);}100%{transform:scale(1);opacity:1}}
+@keyframes clearFade{0%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(.6)}}
+@keyframes placePop{0%{transform:scale(.6);opacity:0}60%{transform:scale(1.08);}100%{transform:scale(1);opacity:1}}
+@keyframes slideUp{0%{transform:translateX(-50%) translateY(80px);opacity:0;}60%{transform:translateX(-50%) translateY(-8px);opacity:1;}100%{transform:translateX(-50%) translateY(0);}}
+/* particle */
+.particle{
+  position:absolute;border-radius:50%;pointer-events:none;z-index:5000;opacity:0.95;
+  transform:scale(.2);
+  animation:particleMove .8s cubic-bezier(.2,.9,.2,1) forwards;
+}
+@keyframes particleMove{0%{transform:translate(0,0) scale(.2);opacity:1}100%{transform:translate(var(--tx), var(--ty)) scale(1);opacity:0}}
+
+.easter{
+  position:fixed;left:50%;bottom:-160px;transform:translateX(-50%);
+  background:linear-gradient(180deg,#0a1318,#07101a);
+  padding:18px 26px;border-radius:18px;z-index:2000;border:1px solid rgba(255,255,255,.06);
+  box-shadow:0 20px 60px rgba(2,6,23,.75);
+  display:flex;gap:10px;align-items:center;color:#fff;font-weight:800;letter-spacing:.6px;opacity:0;
+}
+.easter.show{animation:slideUp 1s cubic-bezier(.2,.9,.2,1) forwards;}
+.easter .label{font-size:20px;color:#ffd36b;text-shadow:0 4px 30px rgba(255,211,107,.12);}
+.easter .sub{font-size:14px;color:#bfe9d7;}
+
+@media(max-width:420px){
+  :root{--cell-size:30px;--gap:3px}
+  .mini-cell{width:12px;height:12px}
+  .easter{padding:14px 18px}
+  .easter .label{font-size:18px}
+  .piece{min-width:90px;padding:6px}
+  .controls{gap:6px}
+  button{padding:10px 12px;font-size:15px}
+}
 </style>
 </head>
 <body>
-  <h1>🧩 Block Puzzle</h1>
-  <div>Очки: <span id="score">0</span></div>
-  <canvas id="game" width="320" height="320"></canvas>
-
-  <div class="controls">
-    <button id="rotate">⟳ Повернуть</button>
-    <button id="reset">🔄 Новая игра</button>
+<noscript>
+  <div style="text-align:center;padding:2em;font-size:18px;color:#fff;">
+    ⚠️ Для запуска игры включите JavaScript.
   </div>
+</noscript>
 
-  <div class="leaders">
-    <h2>🏆 Топ-3 лидеров</h2>
-    <ol id="leaderboard"></ol>
+<div class="wrap">
+  <h1>Blocawa — RGB-ИВЕНТ</h1>
+  <div class="board-shell" id="boardShell">
+    <div id="board" class="board" aria-label="Игровое поле"></div>
+    <div class="palette" id="palette" aria-hidden="false"></div>
+    <div class="controls">                                  
+      <div class="score">Очки: <span id="score">0</span></div>
+    </div>
+
+    <!-- leaderboard placeholder added -->
+    <div id="leaderContainer" style="margin-top:12px;text-align:center;">
+      <h3 style="margin:6px 0;color:#8ae7d1;font-size:14px;">🏆 Топ-3</h3>
+      <ol id="leaderboard" style="list-style:none;padding:0;margin:0 0 6px 0;"></ol>
+      <div style="font-size:12px;color:#cfeefe;opacity:.8;">Ник сохраняется в LocalStorage</div>
+    </div>
   </div>
+</div>
 
-  <!-- ==================== ИГРА ==================== -->
-  <script type="module">
-  // === Настройки игры ===
-  const canvas = document.getElementById('game');
-  const ctx = canvas.getContext('2d');
-  const size = 8;
-  const block = canvas.width / size;
-  let grid = Array(size).fill().map(() => Array(size).fill(0));
-  let score = 0;
-  const scoreEl = document.getElementById('score');
+<!-- Easter egg element -->
+<div id="easter" class="easter" aria-hidden="true">
+  <div class="label">удобная поза</div>
+  <div class="sub">— ира пасхалко —</div>
+</div>
 
-  // Фигуры (как в 1010)
-  const shapes = [
-    [[1]], [[1,1]], [[1,1,1]], [[1,1,1,1]], [[1,1,1,1,1]],
-    [[1],[1]], [[1],[1],[1]], [[1,1],[1,0]], [[1,1],[0,1]], [[1,1],[1,1]]
-  ];
+<script>
+/* --- ИСХОДНЫЙ КОД ИГРЫ (не изменён) --- */
+/* Полный JS: логика игрового поля, палитры, drag/tap, очистки и пасхалки. */
+/* Константы */
+const COLS = 10, ROWS = 10;
+const boardEl = document.getElementById('board');
+const paletteEl = document.getElementById('palette');
+const scoreEl = document.getElementById('score');
+const newPiecesBtn = document.getElementById('newPiecesBtn');
+const easterEl = document.getElementById('easter');
 
-  let currentShape = randomShape();
+let board = Array.from({length: ROWS}, ()=>Array(COLS).fill(0));
+let score = 0;
 
-  function randomShape() {
-    const s = shapes[Math.floor(Math.random() * shapes.length)];
-    return JSON.parse(JSON.stringify(s));
-  }
+/* Набор фигур — скорректирован и готов к использованию */
+const SHAPES = [
+  [[0,0]], // single
+  [[0,0],[1,0]], // 2-line
+  [[0,0],[1,0],[2,0]], // 3-line
+  [[0,0],[0,1],[1,0]], // small L (2x2 L)
+  [[0,0],[1,0],[0,1],[1,1]], // 2x2 square
+  [[0,0],[1,0],[2,0],[3,0]], // 4-line
+  [[0,0],[1,0],[2,0],[1,1]], // T (upright)
+  [[1,0],[0,1],[1,1],[2,1],[1,2]], // plus (5)
+  [[0,0],[1,0],[2,0],[2,1]], // L-like longer
+  [[0,0],[0,1],[0,2],[1,2]], // mirrored L
+  [[0,1],[1,1],[2,1],[1,0]], // T variant (centered)
+  [[0,0],[1,0],[1,1]], // small corner
+  [[0,0],[1,0],[2,0],[0,1]] // Г-образный
+];
 
-  function draw() {
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    for (let y=0; y<size; y++) {
-      for (let x=0; x<size; x++) {
-        if (grid[y][x]) {
-          ctx.fillStyle = '#8ae7d1';
-          ctx.fillRect(x*block, y*block, block-1, block-1);
-        } else {
-          ctx.fillStyle = '#1e293b';
-          ctx.fillRect(x*block, y*block, block-1, block-1);
-        }
+/* --- Отрисовка доски --- */
+function renderBoard(){
+  boardEl.innerHTML = '';
+  for(let r=0;r<ROWS;r++){
+    for(let c=0;c<COLS;c++){
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.dataset.r = r;
+      cell.dataset.c = c;
+      if(board[r][c]){
+        cell.classList.add('occupied');
+        const inner = document.createElement('div');
+        inner.className = 'pulse';
+        cell.appendChild(inner);
       }
+      boardEl.appendChild(cell);
+    }
+  }
+}
+renderBoard();
+
+/* --- Генерация случайной фигуры --- */
+function randomPiece(){
+  const shape = SHAPES[Math.floor(Math.random()*SHAPES.length)];
+  // Normalize so min x,y = 0
+  let minx = Math.min(...shape.map(p=>p[0])), miny = Math.min(...shape.map(p=>p[1]));
+  const coords = shape.map(p=>[p[0]-minx, p[1]-miny]);
+  return {coords, id: Math.random().toString(36).slice(2,8)};
+}
+
+/* --- Палитра --- */
+let palette = [];
+function refillPalette(){
+  palette = [randomPiece(), randomPiece(), randomPiece()];
+  renderPalette();
+}
+refillPalette();
+
+function renderPalette(){
+  paletteEl.innerHTML = '';
+  for(let i=0;i<palette.length;i++){
+    const p = palette[i];
+    const pieceEl = document.createElement('div');
+    pieceEl.className = 'piece';
+    pieceEl.dataset.pieceId = p.id;
+    pieceEl.setAttribute('role','button');
+
+    // compute bounds
+    const maxX = Math.max(...p.coords.map(cc=>cc[0]));
+    const maxY = Math.max(...p.coords.map(cc=>cc[1]));
+    const cols = maxX+1, rows = maxY+1;
+    const mini = document.createElement('div');
+    mini.className = 'mini-grid';
+    mini.style.gridTemplateColumns = `repeat(${cols}, 14px)`;
+    mini.style.gridAutoRows = `14px`;
+    mini.style.padding = '6px';
+    mini.style.borderRadius = '8px';
+    mini.style.background = 'linear-gradient(180deg, rgba(255,255,255,0.01), rgba(0,0,0,0.01))';
+
+    for(let y=0;y<rows;y++){
+      for(let x=0;x<cols;x++){
+        const mc = document.createElement('div');
+        const filled = p.coords.some(pt=>pt[0]===x && pt[1]===y);
+        mc.className = 'mini-cell' + (filled? ' filled':'');
+        if(filled) mc.style.background = 'linear-gradient(180deg,#ff7aa2,#8affd1)';
+        mini.appendChild(mc);
+      }
+    }
+    pieceEl.appendChild(mini);
+    paletteEl.appendChild(pieceEl);
+    attachPiecePointerHandlers(pieceEl, p);
+  }
+}
+
+/* --- Drag / Tap state --- */
+let currentPick = null;
+let ghost = null;
+
+function createGhostForPiece(piece){
+  const g = document.createElement('div');
+  g.className = 'ghost';
+  // build grid reflective of bounding box
+  const maxX = Math.max(...piece.coords.map(p=>p[0]));
+  const maxY = Math.max(...piece.coords.map(p=>p[1]));
+  const cols = maxX+1, rows = maxY+1;
+  g.style.display = 'grid';
+  const cellBase = Math.max(20, Math.round(parseInt(getComputedStyle(document.documentElement).getPropertyValue('--cell-size'))*0.9));
+  g.style.gridTemplateColumns = `repeat(${cols}, ${cellBase}px)`;
+  g.style.gridAutoRows = `${cellBase}px`;
+  g.style.gap = Math.max(3, Math.round(parseInt(getComputedStyle(document.documentElement).getPropertyValue('--gap'))*0.6)) + 'px';
+  g.style.padding = '6px';
+  g.style.borderRadius = '10px';
+  g.style.background = 'rgba(0,0,0,0.22)';
+  g.style.border = '1px solid rgba(255,255,255,0.04)';
+
+  for(let y=0;y<rows;y++){
+    for(let x=0;x<cols;x++){
+      const box = document.createElement('div');
+      box.style.borderRadius = '6px';
+      box.style.boxShadow = 'inset 0 -3px 8px rgba(0,0,0,0.6)';
+      if(piece.coords.some(pt=>pt[0]===x && pt[1]===y)){
+        box.style.background = 'linear-gradient(180deg,#ff9ad1,#7df0c2)';
+        box.style.opacity = '0.98';
+      } else {
+        box.style.background = 'transparent';
+      }
+      g.appendChild(box);
     }
   }
 
-  canvas.addEventListener('click', e => {
-    const x = Math.floor(e.offsetX / block);
-    const y = Math.floor(e.offsetY / block);
-    attemptPlace(x, y);
+  document.body.appendChild(g);
+  return g;
+}
+
+function attachPiecePointerHandlers(el, piece){
+  el.addEventListener('pointerdown', (e)=>{
+    e.preventDefault();
+    el.setPointerCapture(e.pointerId);
+    currentPick = {
+      piece,
+      pointerId: e.pointerId,
+      originEl: el,
+      startX: e.clientX,
+      startY: e.clientY,
+      moved: false
+    };
+    el.classList.add('picked');
+    ghost = createGhostForPiece(piece);
+    moveGhost(e.clientX, e.clientY);
+    window.addEventListener('pointermove', onGlobalPointerMove);
+    window.addEventListener('pointerup', onGlobalPointerUp);
+  });
+}
+
+function onGlobalPointerMove(e){
+  if(!currentPick || e.pointerId !== currentPick.pointerId) return;
+  const dx = e.clientX - currentPick.startX, dy = e.clientY - currentPick.startY;
+  if(!currentPick.moved && (Math.abs(dx)>6 || Math.abs(dy)>6)){
+    currentPick.moved = true;
+  }
+  moveGhost(e.clientX, e.clientY);
+
+  // highlight cell under pointer
+  const boardRect = boardEl.getBoundingClientRect();
+  const cellW = boardRect.width / COLS;
+  const cellH = boardRect.height / ROWS;
+  const relX = e.clientX - boardRect.left;
+  const relY = e.clientY - boardRect.top;
+  const baseCol = Math.floor(relX / cellW);
+  const baseRow = Math.floor(relY / cellH);
+  clearHighlights();
+  if(baseCol>=0 && baseCol<COLS && baseRow>=0 && baseRow<ROWS){
+    const ok = checkPlacement(currentPick.piece.coords, baseRow, baseCol);
+    highlightPlacement(currentPick.piece.coords, baseRow, baseCol, ok);
+  }
+}
+
+function onGlobalPointerUp(e){
+  if(!currentPick || e.pointerId !== currentPick.pointerId) return;
+  const boardRect = boardEl.getBoundingClientRect();
+  const cellW = boardRect.width / COLS;
+  const cellH = boardRect.height / ROWS;
+  const relX = e.clientX - boardRect.left;
+  const relY = e.clientY - boardRect.top;
+  const baseCol = Math.floor(relX / cellW);
+  const baseRow = Math.floor(relY / cellH);
+
+  if(currentPick.moved){
+    if(baseCol>=0 && baseCol<COLS && baseRow>=0 && baseRow<ROWS){
+      attemptPlace(currentPick.piece, baseRow, baseCol);
+    }
+  } else {
+    enterTapToPlaceMode(currentPick.piece, currentPick.originEl);
+  }
+  cleanupCurrentPick();
+}
+
+function cleanupCurrentPick(){
+  if(currentPick && currentPick.originEl) currentPick.originEl.classList.remove('picked');
+  if(ghost){ ghost.remove(); ghost = null; }
+  currentPick = null;
+  window.removeEventListener('pointermove', onGlobalPointerMove);
+  window.removeEventListener('pointerup', onGlobalPointerUp);
+  clearHighlights();
+}
+
+function moveGhost(clientX, clientY){
+  if(!ghost) return;
+  ghost.style.left = clientX + 'px';
+  ghost.style.top = clientY + 'px';
+}
+
+/* --- Проверки и подсветка --- */
+function checkPlacement(coords, row, col){
+  for(const [x,y] of coords){
+    const r = row + y; const c = col + x;
+    if(r<0 || r>=ROWS || c<0 || c>=COLS) return false;
+    if(board[r][c]) return false;
+  }
+  return true;
+}
+
+function highlightPlacement(coords, row, col, ok){
+  coords.forEach(([x,y])=>{
+    const r = row + y, c = col + x;
+    if(r<0 || r>=ROWS || c<0 || c>=COLS) return;
+    const idx = r*COLS + c;
+    const cell = boardEl.children[idx];
+    if(!cell) return;
+    cell.classList.add(ok ? 'highlight-okay' : 'highlight-bad');
+  });
+}
+
+function clearHighlights(){
+  boardEl.querySelectorAll('.cell.highlight-okay, .cell.highlight-bad').forEach(el=>{
+    el.classList.remove('highlight-okay','highlight-bad');
+  });
+}
+
+/* --- Размещение фигуры --- */
+function attemptPlace(piece, row, col){
+  if(!checkPlacement(piece.coords, row, col)){
+    if(navigator.vibrate) navigator.vibrate(32);
+    flashBadPlacement();
+    playSound('error');
+    return false;
+  }
+  // mark newly placed cells for particle & animation
+  const newly = [];
+  piece.coords.forEach(([x,y])=>{
+    const r = row + y, c = col + x;
+    board[r][c] = 1;
+    newly.push([r,c]);
+  });
+  renderBoard();
+  // animate placed cells
+  animatePlacedCells(newly);
+  palette = palette.filter(p=>p.id !== piece.id);
+  if(palette.length===0) refillPalette();
+  renderPalette();
+  // score: базовые очки + бонусы за размещение
+  score += piece.coords.length * 10;
+  scoreEl.textContent = score;
+  playSound('place');
+
+  // Пасхалка: ровно 69000
+  if(score === 69000) showEasterEgg();
+
+  // проверка и очистка линий
+  const cleared = clearFullLines();
+  if(cleared > 0){
+    // бонус за множественные линии
+    score += cleared * 50;
+    scoreEl.textContent = score;
+    playSound('clear');
+    if(score === 69000) showEasterEgg();
+  }
+
+  return true;
+}
+
+function flashBadPlacement(){
+  // небольшой визуальный флеш всех клеток
+  boardEl.style.transition = 'transform 80ms ease';
+  boardEl.style.transform = 'translateY(-6px)';
+  setTimeout(()=>{ boardEl.style.transform = ''; }, 90);
+}
+
+/* --- Tap-to-place mode --- */
+let tapMode = null;
+function enterTapToPlaceMode(piece, originEl){
+  tapMode = {piece, originEl};
+  originEl.classList.add('picked');
+  const handler = function(e){
+    e.preventDefault();
+    const target = e.target;
+    if(!target.classList.contains('cell')) return;
+    const r = Number(target.dataset.r), c = Number(target.dataset.c);
+    attemptPlace(piece, r, c);
+    originEl.classList.remove('picked');
+    tapMode = null;
+    boardEl.removeEventListener('pointerdown', handler);
+  };
+  boardEl.addEventListener('pointerdown', handler);
+}
+
+/* --- Очистка полных строк/столбцов --- */
+function clearFullLines(){
+  const fullRows = [];
+  for(let r=0;r<ROWS;r++) if(board[r].every(v=>v===1)) fullRows.push(r);
+  const fullCols = [];
+  for(let c=0;c<COLS;c++){
+    let ok = true;
+    for(let r=0;r<ROWS;r++) if(board[r][c]===0){ ok=false; break; }
+    if(ok) fullCols.push(c);
+  }
+  if(fullRows.length===0 && fullCols.length===0) return 0;
+
+  // Для анимации пометим клетки как clearing, затем удалим
+  const toClearCells = [];
+  fullRows.forEach(r=>{
+    for(let c=0;c<COLS;c++){
+      toClearCells.push([r,c]);
+    }
+  });
+  fullCols.forEach(c=>{
+    for(let r=0;r<ROWS;r++){
+      // avoid double push
+      if(!toClearCells.some(pair=>pair[0]===r && pair[1]===c)) toClearCells.push([r,c]);
+    }
   });
 
-  document.getElementById('rotate').onclick = () => {
-    currentShape = rotate(currentShape);
+  // пометим DOM-элементы
+  toClearCells.forEach(([r,c])=>{
+    const idx = r*COLS + c;
+    const el = boardEl.children[idx];
+    if(el) el.classList.add('clearing');
+  });
+
+  // подождём анимацию, затем очистим data model и перерендерим
+  setTimeout(()=>{
+    // очистка данных
+    fullRows.forEach(r=>{ for(let c=0;c<COLS;c++) board[r][c]=0; });
+    fullCols.forEach(c=>{ for(let r=0;r<ROWS;r++) board[r][c]=0; });
+    renderBoard();
+  }, 420);
+
+  // очки
+  const clearedCount = fullRows.length + fullCols.length;
+  score += clearedCount * 100; // дополнительная награда
+  scoreEl.textContent = score;
+  return clearedCount;
+}
+
+/* --- Новые фигуры --- */
+if(newPiecesBtn) newPiecesBtn.addEventListener('click', ()=>{ refillPalette(); });
+
+/* --- Отключение скролла при таче внутри поля --- */
+document.addEventListener('touchmove', function(e){
+  if(e.target.closest('.board-shell')) e.preventDefault();
+}, {passive:false});
+
+/* --- Поддержка клика для tap mode (десктоп) --- */
+boardEl.addEventListener('click', (e)=>{
+  if(tapMode && e.target.classList.contains('cell')){
+    const r = Number(e.target.dataset.r), c = Number(e.target.dataset.c);
+    attemptPlace(tapMode.piece, r, c);
+    if(tapMode.originEl) tapMode.originEl.classList.remove('picked');
+    tapMode = null;
+  }
+});
+
+/* --- Пасхалка: "удобная поза" --- */
+let easterShown = false;
+function showEasterEgg(){
+  if(easterShown) return;
+  easterShown = true;
+  easterEl.classList.add('show');
+  easterEl.setAttribute('aria-hidden','false');
+  // скрыть через 5.5 сек
+  setTimeout(()=>{
+    easterEl.classList.remove('show');
+    easterEl.setAttribute('aria-hidden','true');
+  }, 5500);
+}
+
+/* --- Инициализация --- */
+renderBoard();
+renderPalette();
+
+  /* ================= Сохранение игры в cookie ================= */
+
+function setCookie(name, value, days=365) {
+  const date = new Date();
+  date.setTime(date.getTime() + (days*24*60*60*1000));
+  const expires = "expires=" + date.toUTCString();
+  document.cookie = name + "=" + value + ";" + expires + ";path=/";
+}
+
+function getCookie(name) {
+  const n = name + "=";
+  const decodedCookie = decodeURIComponent(document.cookie);
+  const ca = decodedCookie.split(';');
+  for(let i=0;i<ca.length;i++) {
+    let c = ca[i];
+    while(c.charAt(0)==' ') c = c.substring(1);
+    if(c.indexOf(n)==0) return c.substring(n.length, c.length);
+  }
+  return "";
+}
+
+function saveGame() {
+  const data = {
+    board,
+    score,
+    paletteCoords: palette.map(p=>p.coords),
+    paletteIds: palette.map(p=>p.id)
   };
-  document.getElementById('reset').onclick = () => {
-    grid = Array(size).fill().map(() => Array(size).fill(0));
-    score = 0;
+  const encoded = btoa(JSON.stringify(data));
+  setCookie("blocawa_save", encoded, 365);
+}
+
+function loadGame() {
+  const raw = getCookie("blocawa_save");
+  if(!raw) return false;
+  try {
+    const data = JSON.parse(atob(raw));
+    board = data.board || board;
+    score = data.score || 0;
+    palette = (data.paletteCoords||[]).map((coords,i)=>({
+      coords, id: data.paletteIds[i] || Math.random().toString(36).slice(2,8)
+    }));
+    renderBoard();
+    renderPalette();
     scoreEl.textContent = score;
-    updatePlayerScore(score);
-    draw();
-  };
-
-  function rotate(shape) {
-    const rows = shape.length;
-    const cols = shape[0].length;
-    const res = Array(cols).fill().map(()=>Array(rows).fill(0));
-    for (let y=0;y<rows;y++)
-      for (let x=0;x<cols;x++)
-        res[x][rows-1-y]=shape[y][x];
-    return res;
+    return true;
+  } catch(e){
+    console.warn("Ошибка загрузки сохранения:", e);
+    return false;
   }
+}
 
-  function attemptPlace(px, py) {
-    const h = currentShape.length;
-    const w = currentShape[0].length;
+/* Автоматическое сохранение */
+setInterval(saveGame, 3000);
 
-    for (let y=0;y<h;y++) for (let x=0;x<w;x++) {
-      if (currentShape[y][x]) {
-        if (px+x>=size || py+y>=size || grid[py+y][px+x]) return; // нельзя
-      }
-    }
+/* При загрузке страницы */
+if(!loadGame()){
+  renderBoard();
+  renderPalette();
+}
 
-    for (let y=0;y<h;y++) for (let x=0;x<w;x++) {
-      if (currentShape[y][x]) grid[py+y][px+x]=1;
-    }
+/* --- КОНЕЦ ИСХОДНОГО КОДА --- */
+</script>
 
-    checkLines();
-    currentShape = randomShape();
-    scoreEl.textContent = score;
-    updatePlayerScore(score);
-    draw();
-  }
+<script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-analytics.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
 
-  function checkLines() {
-    let cleared = 0;
-    for (let y=0;y<size;y++) {
-      if (grid[y].every(c=>c)) {
-        grid[y]=Array(size).fill(0);
-        cleared++;
-      }
-    }
-    for (let x=0;x<size;x++) {
-      if (grid.every(r=>r[x])) {
-        for (let y=0;y<size;y++) grid[y][x]=0;
-        cleared++;
-      }
-    }
-    if (cleared>0) score += cleared*100;
-  }
-
-  draw();
-
-  // ==================== FIREBASE ====================
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-  import { getDatabase, ref, set, onValue, query, orderByChild, limitToLast } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
-
-  // ⚠️ ЗАМЕНИ ЭТИ ДАННЫЕ НА СВОИ из Firebase Console
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
   const firebaseConfig = {
-    apiKey: "ВАШ_API_KEY",
-    authDomain: "ВАШ_ПРОЕКТ.firebaseapp.com",
-    databaseURL: "https://ВАШ_ПРОЕКТ.firebaseio.com",
-    projectId: "ВАШ_ПРОЕКТ",
-    storageBucket: "ВАШ_ПРОЕКТ.appspot.com",
-    messagingSenderId: "000000000000",
-    appId: "1:000000000000:web:xxxxxxxxxxxxxxxx"
+    apiKey: "AIzaSyApwYCoo-JVIIl3DK1EQhKWfFDsW8PF4nE",
+    authDomain: "rewgfsdf.firebaseapp.com",
+    databaseURL: "https://rewgfsdf-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "rewgfsdf",
+    storageBucket: "rewgfsdf.firebasestorage.app",
+    messagingSenderId: "1028773799521",
+    appId: "1:1028773799521:web:bc7b2ab93ba6513e996c20",
+    measurementId: "G-T0FBTEME7N"
   };
 
+  // Initialize Firebase
   const app = initializeApp(firebaseConfig);
-  const db = getDatabase(app);
+  const analytics = getAnalytics(app);
+  
+</script>
 
-  // === Имя игрока ===
-  const playerName = localStorage.getItem("playerName") || prompt("Введите ваш ник:") || "Игрок";
-  localStorage.setItem("playerName", playerName);
+let firebaseEnabled = false;
+let db = null;
+try {
+  const app = initializeApp(firebaseConfig);
+  db = getDatabase(app);
+  firebaseEnabled = true;
+  console.log("Firebase инициализирован");
+} catch(e){
+  console.warn("Firebase не инициализирован — проверь конфиг.", e);
+}
 
-  function updatePlayerScore(newScore) {
-    const userRef = ref(db, 'players/' + playerName);
-    set(userRef, { name: playerName, score: newScore });
+/* ---------------- WebAudio: звуки place/clear/error ---------------- */
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
+function ensureAudio(){
+  if(!audioCtx) audioCtx = new AudioCtx();
+}
+function playTone(freq, duration=0.08, type='sine', vol=0.08){
+  try{
+    ensureAudio();
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.type = type;
+    o.frequency.value = freq;
+    g.gain.value = vol;
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start();
+    g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+    setTimeout(()=>{ o.stop(); }, duration*1000 + 20);
+  }catch(e){ /* audio blocked */ }
+}
+function playSound(kind){
+  if(kind === 'place') {
+    playTone(780, 0.08, 'triangle', 0.06);
+    playTone(980, 0.09, 'sine', 0.04);
+  } else if(kind === 'clear'){
+    playTone(1000, 0.16, 'sine', 0.10);
+    setTimeout(()=>playTone(620,0.12,'sine',0.06), 60);
+  } else if(kind === 'error'){
+    playTone(240, 0.12, 'sawtooth', 0.12);
   }
+}
 
-  function loadLeaderboard() {
-    const topQuery = query(ref(db, 'players'), orderByChild('score'), limitToLast(3));
-    onValue(topQuery, (snapshot) => {
-      const data = snapshot.val() || {};
-      const sorted = Object.values(data).sort((a,b)=>b.score - a.score);
-      const list = document.getElementById('leaderboard');
-      list.innerHTML = '';
-      sorted.forEach((p, i) => {
-        const li = document.createElement('li');
-        li.textContent = `${i+1}. ${p.name} — ${p.score}`;
-        list.appendChild(li);
-      });
+/* ----------------- Particle effect + placed animation ----------------- */
+function animatePlacedCells(cells){
+  // cells = [[r,c], ...]
+  cells.forEach(([r,c])=>{
+    const idx = r*COLS + c;
+    const el = boardEl.children[idx];
+    if(!el) return;
+    // add class for pop animation
+    el.classList.add('placed');
+    setTimeout(()=> el.classList.remove('placed'), 420);
+
+    // spawn small particles
+    for(let i=0;i<6;i++){
+      const p = document.createElement('div');
+      p.className = 'particle';
+      const size = Math.random()*8 + 6;
+      p.style.width = p.style.height = size + 'px';
+      p.style.left = (el.getBoundingClientRect().left + el.clientWidth/2 - size/2) + 'px';
+      p.style.top = (el.getBoundingClientRect().top + el.clientHeight/2 - size/2) + 'px';
+      p.style.background = ['#ff7aa2','#8affd1','#ffd36b','#7df0c2'][Math.floor(Math.random()*4)];
+      // random translate
+      const tx = (Math.random()*160 - 80).toFixed(0) + 'px';
+      const ty = (Math.random()*120 - 100).toFixed(0) + 'px';
+      p.style.setProperty('--tx', tx);
+      p.style.setProperty('--ty', ty);
+      document.body.appendChild(p);
+      setTimeout(()=> p.remove(), 820);
+    }
+  });
+}
+
+/* ----------------- Mobile tweak: adjust --cell-size based on viewport ----------------- */
+function adaptCellSize(){
+  const w = Math.min(window.innerWidth, 720);
+  let sizeVar = 36;
+  if(w <= 420) sizeVar = 30;
+  else if(w <= 360) sizeVar = 28;
+  else if(w >= 900) sizeVar = 44;
+  document.documentElement.style.setProperty('--cell-size', sizeVar + 'px');
+}
+adaptCellSize();
+window.addEventListener('resize', adaptCellSize);
+
+/* ----------------- PLAYER NAME (localStorage) ----------------- */
+const PLAYER_KEY = 'blocawa_nick_v1';
+let playerName = localStorage.getItem(PLAYER_KEY);
+if(!playerName){
+  playerName = prompt("Введите ник для таблицы лидеров (без пробелов):") || ('Player' + Math.floor(Math.random()*9000+100));
+  playerName = playerName.replace(/\s+/g,'_').slice(0,24);
+  localStorage.setItem(PLAYER_KEY, playerName);
+}
+
+/* ----------------- Firebase Save/Load helpers ----------------- */
+async function saveProgressToFirebase(){
+  if(!firebaseEnabled) return;
+  try{
+    const saveRef = ref(db, 'saves/' + playerName);
+    await set(saveRef, {
+      board,
+      score,
+      paletteCoords: palette.map(p=>p.coords),
+      paletteIds: palette.map(p=>p.id),
+      updated: new Date().toISOString()
     });
+    // also update leaderboard node
+    const playerRef = ref(db, 'players/' + playerName);
+    await set(playerRef, { name: playerName, score: score, updated: new Date().toISOString() });
+    //console.log('Saved to firebase');
+  }catch(e){
+    console.warn('Ошибка сохранения в Firebase:', e);
+  }
+}
+
+async function loadProgressFromFirebase(){
+  if(!firebaseEnabled) return false;
+  try{
+    const dbRef = ref(db);
+    const snap = await get(child(dbRef, 'saves/' + playerName));
+    if(snap.exists()){
+      const data = snap.val();
+      if(data.board) board = data.board;
+      if(typeof data.score === 'number') score = data.score;
+      if(data.paletteCoords){
+        palette = (data.paletteCoords||[]).map((coords,i)=>({
+          coords, id: data.paletteIds ? data.paletteIds[i] : (Math.random().toString(36).slice(2,8))
+        }));
+      }
+      renderBoard();
+      renderPalette();
+      scoreEl.textContent = score;
+      console.log('Loaded progress from Firebase for', playerName);
+      return true;
+    }
+  }catch(e){
+    console.warn('Ошибка загрузки прогресса из Firebase:', e);
+  }
+  return false;
+}
+
+/* ----------------- Leaderboard (top 3) ----------------- */
+function startLeaderboardListener(){
+  if(!firebaseEnabled) return;
+  const topQuery = query(ref(db, 'players'), orderByChild('score'), limitToLast(3));
+  onValue(topQuery, (snapshot)=>{
+    const data = snapshot.val() || {};
+    const arr = Object.values(data).sort((a,b)=>b.score - a.score);
+    const list = document.getElementById('leaderboard');
+    if(!list) return;
+    list.innerHTML = '';
+    arr.forEach((p, i)=>{
+      const li = document.createElement('li');
+      li.style.padding = '6px 10px';
+      li.style.margin = '4px 6px';
+      li.style.borderRadius = '8px';
+      li.style.background = 'linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.02))';
+      li.textContent = `${i+1}. ${p.name} — ${p.score}`;
+      list.appendChild(li);
+    });
+  }, (err)=> console.warn('leader error', err));
+}
+
+/* ----------------- Hooking into game updates WITHOUT changing logic ----------------- */
+/* Approach: observe score element and intercept renderBoard calls to trigger firebase save and animate newly placed cells */
+(function attachHooks(){
+  // 1) Observe score changes
+  const scoreObserver = new MutationObserver(muts=>{
+    // whenever score text changes, save small delay to avoid frequent writes
+    scheduleSaveToFirebaseDebounced();
+  });
+  scoreObserver.observe(scoreEl, { characterData: true, childList: true, subtree: true });
+
+  // 2) Wrap renderBoard to detect newly occupied cells and animate them and schedule save
+  if(typeof renderBoard === 'function'){
+    const originalRender = renderBoard;
+    let prevBoardSnapshot = JSON.parse(JSON.stringify(board));
+    renderBoard = function(){
+      // take snapshot before
+      const before = JSON.parse(JSON.stringify(prevBoardSnapshot));
+      originalRender();
+      // compute newly filled cells
+      const newly = [];
+      for(let r=0;r<ROWS;r++){
+        for(let c=0;c<COLS;c++){
+          if(board[r][c] && !before[r][c]) newly.push([r,c]);
+        }
+      }
+      if(newly.length) animatePlacedCells(newly);
+      prevBoardSnapshot = JSON.parse(JSON.stringify(board));
+      // schedule save after render
+      scheduleSaveToFirebaseDebounced();
+    };
   }
 
-  loadLeaderboard();
-  </script>
+  // On initial load, try loading user's last progress from Firebase
+  (async ()=>{
+    const loaded = await loadProgressFromFirebase();
+    if(!loaded){
+      // nothing loaded — but ensure leaderboard listener still runs
+      // render already called earlier
+    }
+    if(firebaseEnabled) startLeaderboardListener();
+  })();
+
+})();
+
+/* ----------------- Debounced saves to reduce writes ----------------- */
+let saveTimeout = null;
+function scheduleSaveToFirebaseDebounced(delay=1200){
+  if(!firebaseEnabled) return;
+  if(saveTimeout) clearTimeout(saveTimeout);
+  saveTimeout = setTimeout(()=>{
+    saveProgressToFirebase();
+    saveTimeout = null;
+  }, delay);
+}
+
+/* ----------------- Manual save button (optional) ----------------- */
+const leaderContainer = document.getElementById('leaderContainer');
+if(leaderContainer){
+  const btn = document.createElement('button');
+  btn.textContent = 'Сохранить в облако';
+  btn.style.marginTop = '8px';
+  btn.onclick = ()=> saveProgressToFirebase().then(()=> alert('Сохранено в Firebase'));
+  leaderContainer.appendChild(btn);
+}
+
+/* ----------------- Also save cookie/local backup on score change ----------------- */
+(function backupLocalOnScoreChange(){
+  const observer = new MutationObserver(()=> saveGame());
+  observer.observe(scoreEl, { childList: true, subtree: true });
+})();
+
+/* ----------------- Touch improvements: increase pointer area on mobile for palette pieces ----------------- */
+function improveTouchAreas(){
+  document.querySelectorAll('.piece').forEach(p=>{
+    p.style.touchAction = 'manipulation';
+    p.style.padding = '10px';
+  });
+}
+setTimeout(improveTouchAreas, 500);
+
+/* ----------------- Ensure audio resumes on user gesture (mobile browsers often block auto audio) ----------------- */
+document.addEventListener('pointerdown', function resumeAudio(){
+  if(audioCtx && audioCtx.state === 'suspended') {
+    audioCtx.resume().catch(()=>{});
+  }
+  document.removeEventListener('pointerdown', resumeAudio);
+});
+
+/* ----------------- If Firebase is not configured, show small notice in console ----------------- */
+if(!firebaseEnabled){
+  console.warn('Firebase не активен — вставь конфиг в скрипт, чтобы включить сохранения и таблицу лидеров.');
+}
+</script>
+
 </body>
 </html>
